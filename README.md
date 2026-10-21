@@ -9,7 +9,7 @@ Feito com **Next.js** (telas) e **Supabase** (login, banco de dados e regras de 
 | Perfil | O que vê | O que pode fazer |
 |---|---|---|
 | Coordenador | Tudo | Tudo: faz os 1:1, demandas, clientes, gestores, prioridades, usuários. Pode haver vários. |
-| Gestor | Só os próprios dados (carteira, 1:1, demandas) | Só visualizar |
+| Gestor | Só os próprios dados (carteira, 1:1, demandas) | Marcar ou desfazer a conclusão das próprias demandas. Entra com código enviado por e-mail. |
 | Liderança | Tudo | Só visualizar |
 | Aguardando liberação | Nada | Esperar o administrador definir o perfil |
 
@@ -59,6 +59,14 @@ Confirmação de e-mail (**Authentication → Providers → Email → Confirm em
 1. Abra o endereço, clique em **Criar conta** e cadastre-se. Você vira Coordenador.
 2. Em **Configurações**, ajuste a lista de gestores e as prioridades (SLA e pontos), se precisar.
 3. Passe o link para gestores e liderança. Depois que eles criarem conta, abra **Usuários** e defina o perfil de cada um (Coordenador, Gestor ou Liderança). Para gestores, escolha também a qual gestor a conta pertence.
+
+## Acesso dos gestores
+
+1. Em **Configurações → Gestores**, preencha o e-mail ao lado do nome do gestor e clique em **Salvar**.
+2. Mande o link do sistema. O gestor digita o e-mail, clica em **Receber código** e digita o código de 6 dígitos que chega.
+3. No primeiro acesso ele já entra como gestor, vinculado ao próprio cadastro. Não é preciso liberar em Usuários.
+
+Os códigos são enviados pelo Gmail configurado no Supabase (Authentication → Emails → SMTP).
 
 ## Como usar
 

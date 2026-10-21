@@ -11,7 +11,7 @@ export interface Profile {
 
 export interface Prioridade { nome: string; sla: number; pts: number; ordem: number }
 
-export interface Gestor { id: string; nome: string; ativo: boolean; created_at?: string }
+export interface Gestor { id: string; nome: string; email: string | null; ativo: boolean; created_at?: string }
 
 export type ClienteStatus = "Ativo" | "Em risco" | "Pausado" | "Churn";
 export interface Cliente { id: string; nome: string; gestor_id: string | null; status: ClienteStatus; obs: string; created_at?: string }

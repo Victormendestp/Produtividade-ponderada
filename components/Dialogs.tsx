@@ -139,9 +139,9 @@ function OneOnOneDialog({ oo, gestorId, onClose }: { oo?: OneOnOne; gestorId?: s
 
 /* ---------- Demanda ---------- */
 function DemandaDialog({ d, gestorId, onClose }: { d?: Demanda; gestorId?: string; onClose: () => void }) {
-  const { supabase, isAdmin, gestores, clientes, prios, reload, toast } = useData();
-  // só coordenadores editam; gestor e liderança apenas visualizam
-  const podeConcluir = isAdmin;
+  const { supabase, isAdmin, gestores, clientes, prios, reload, toast, podeConcluir: pode } = useData();
+  // coordenador edita tudo; gestor só marca a conclusão das próprias; liderança só visualiza
+  const podeConcluir = isAdmin || (!!d && pode(d));
   const [g, setG] = useState(d?.gestor_id ?? gestorId ?? "");
   const [cliente, setCliente] = useState(d?.cliente_nome ?? "");
   const [data, setData] = useState(d?.data ?? todayISO());
@@ -168,6 +168,9 @@ function DemandaDialog({ d, gestorId, onClose }: { d?: Demanda; gestorId?: strin
         const { id } = await clienteId(supabase, clientes, g, cliente);
         const payload = { gestor_id: g, cliente_id: id, cliente_nome: cliente.trim(), data, prioridade: prioridade || null, problema: problema.trim(), acao: acao.trim(), conclusao: conclusao || null };
         const r = d ? await supabase.from("demandas").update(payload).eq("id", d.id) : await supabase.from("demandas").insert(payload);
+        if (r.error) throw new Error(r.error.message);
+      } else if (d) {
+        const r = await supabase.from("demandas").update({ conclusao: conclusao || null }).eq("id", d.id);
         if (r.error) throw new Error(r.error.message);
       }
       await reload(); toast(d ? "Demanda atualizada" : "Demanda criada"); onClose();

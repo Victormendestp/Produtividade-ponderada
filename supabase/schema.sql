@@ -20,6 +20,8 @@ create table if not exists public.gestores (
   ativo      boolean not null default true,
   created_at timestamptz not null default now()
 );
+alter table public.gestores add column if not exists email text;
+create unique index if not exists gestores_email_uidx on public.gestores (lower(email)) where email is not null and email <> '';
 
 create table if not exists public.profiles (
   id         uuid primary key references auth.users on delete cascade,
@@ -85,11 +87,16 @@ $$;
 -- Novo usuário: o primeiro a se cadastrar vira administrador; os demais ficam pendentes
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare g public.gestores%rowtype;
 begin
-  insert into public.profiles (id, email, nome, papel)
+  select * into g from public.gestores where lower(email) = lower(new.email) limit 1;
+  insert into public.profiles (id, email, nome, papel, gestor_id)
   values (
-    new.id, new.email, coalesce(new.raw_user_meta_data->>'nome', ''),
-    case when not exists (select 1 from public.profiles) then 'admin' else 'pendente' end
+    new.id, new.email, coalesce(nullif(new.raw_user_meta_data->>'nome', ''), g.nome, ''),
+    case when g.id is not null then 'gestor'
+         when not exists (select 1 from public.profiles) then 'admin'
+         else 'pendente' end,
+    g.id
   );
   return new;
 end $$;
@@ -98,7 +105,7 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Proteção extra: quem não é coordenador (admin) não altera dados da demanda
+-- Quem não é coordenador (admin) só pode mudar a data de conclusão
 create or replace function public.guard_demanda_update() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
@@ -106,7 +113,7 @@ begin
     if (new.gestor_id, new.cliente_id, new.cliente_nome, new.oneonone_id, new.data, new.problema, new.acao, new.prioridade)
        is distinct from
        (old.gestor_id, old.cliente_id, old.cliente_nome, old.oneonone_id, old.data, old.problema, old.acao, old.prioridade) then
-      raise exception 'Somente coordenadores alteram as demandas.';
+      raise exception 'O gestor pode apenas marcar ou desfazer a conclusão.';
     end if;
   end if;
   new.updated_at = now();
@@ -170,7 +177,7 @@ drop policy if exists oo_admin on public.oneonones;
 create policy oo_admin on public.oneonones for all to authenticated
   using (public.my_papel() = 'admin') with check (public.my_papel() = 'admin');
 
--- demandas: leitura igual; só coordenadores (admin) alteram
+-- demandas: leitura igual; coordenadores fazem tudo; gestor só marca a conclusão das próprias (o gatilho garante)
 drop policy if exists dem_read on public.demandas;
 create policy dem_read on public.demandas for select to authenticated
   using (public.my_papel() in ('admin','lideranca') or gestor_id = public.my_gestor());
@@ -178,6 +185,9 @@ drop policy if exists dem_admin on public.demandas;
 create policy dem_admin on public.demandas for all to authenticated
   using (public.my_papel() = 'admin') with check (public.my_papel() = 'admin');
 drop policy if exists dem_gestor_update on public.demandas;
+create policy dem_gestor_update on public.demandas for update to authenticated
+  using (public.my_papel() = 'gestor' and gestor_id = public.my_gestor())
+  with check (public.my_papel() = 'gestor' and gestor_id = public.my_gestor());
 
 -- ---------- Gestores iniciais (os 14 da planilha; edite ou apague à vontade) ----------
 insert into public.gestores (nome)
@@ -194,3 +204,31 @@ begin
     end if;
   end loop;
 end $$;
+
+-- ---------- Acesso do gestor pelo e-mail cadastrado ----------
+create or replace function public.sync_gestor_email() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  -- e-mail removido ou trocado: a conta antiga perde o vínculo
+  if tg_op = 'UPDATE' and old.email is not null and lower(coalesce(new.email, '')) <> lower(old.email) then
+    update public.profiles set papel = 'pendente', gestor_id = null
+     where gestor_id = old.id and papel = 'gestor';
+  end if;
+  -- e-mail novo: se a pessoa já tem conta, vira gestor deste cadastro
+  if coalesce(new.email, '') <> '' then
+    update public.profiles set papel = 'gestor', gestor_id = new.id
+     where lower(email) = lower(new.email) and papel in ('pendente', 'gestor');
+  end if;
+  return new;
+end $$;
+drop trigger if exists gestores_email_sync on public.gestores;
+create trigger gestores_email_sync after insert or update of email on public.gestores
+  for each row execute function public.sync_gestor_email();
+
+-- Usada na tela de login: só e-mails de gestores cadastrados ou de usuários existentes recebem código
+create or replace function public.email_liberado(e text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.gestores where lower(email) = lower(trim(e)) and ativo)
+      or exists (select 1 from public.profiles where lower(email) = lower(trim(e)))
+$$;
+grant execute on function public.email_liberado(text) to anon, authenticated;

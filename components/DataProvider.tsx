@@ -19,6 +19,8 @@ interface Data {
   demandas: DemandaC[];
   prios: Prioridade[];
   profiles: Profile[];
+  /** Coordenador conclui qualquer demanda; gestor, só as próprias. */
+  podeConcluir: (d: Pick<Demanda, "gestor_id">) => boolean;
   reload: () => Promise<void>;
   toast: (msg: string) => void;
   /** Executa uma escrita no banco, mostra o erro (se houver) e recarrega os dados. */
@@ -79,13 +81,19 @@ export function DataProvider({ profile, children }: { profile: Profile; children
 
   const run = useCallback<Data["run"]>(async (fn, ok) => {
     const { error } = await fn();
-    if (error) { setMsg(`Erro: ${error.message}`); return false; }
+    if (error) {
+      setMsg(error.message.includes("gestores_email_uidx") ? "Esse e-mail já está cadastrado em outro gestor." : `Erro: ${error.message}`);
+      return false;
+    }
     await reload();
     if (ok) setMsg(ok);
     return true;
   }, [reload]);
 
-  const value: Data = { supabase, profile, isAdmin, hoje, loading, error, gestores, clientes, oneonones, demandas, prios, profiles, reload, toast: setMsg, run };
+  const podeConcluir = useCallback((d: Pick<Demanda, "gestor_id">) =>
+    isAdmin || (profile.papel === "gestor" && !!profile.gestor_id && profile.gestor_id === d.gestor_id), [isAdmin, profile]);
+
+  const value: Data = { supabase, profile, isAdmin, hoje, loading, error, gestores, clientes, oneonones, demandas, prios, profiles, podeConcluir, reload, toast: setMsg, run };
   return (
     <Ctx.Provider value={value}>
       {children}

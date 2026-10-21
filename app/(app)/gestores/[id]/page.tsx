@@ -29,13 +29,13 @@ function OOBody({ o, ligadas, por }: { o: OneOnOne; ligadas: DemandaC[]; por?: s
 
 export default function GestorPage() {
   const { id } = useParams<{ id: string }>();
-  const { gestores, clientes, demandas, oneonones, profiles, hoje, isAdmin, run, supabase } = useData();
+  const { gestores, clientes, demandas, oneonones, profiles, hoje, isAdmin, run, supabase, podeConcluir: pode } = useData();
   const quem = (o: OneOnOne) => { const u = profiles.find(p => p.id === o.created_by); return u ? u.nome || u.email || undefined : undefined; };
   const { openOneOnOne, openDemanda, openCliente } = useDialogs();
   const g = gestores.find(x => x.id === id);
   if (!g) return <div className="notice">Gestor não encontrado ou sem permissão de acesso.</div>;
 
-  const podeConcluir = isAdmin;
+  const podeConcluir = pode({ gestor_id: g.id });
   const seg = monday(hoje);
   const mine = demandas.filter(d => d.gestor_id === g.id);
   const carteira = clientes.filter(c => c.gestor_id === g.id);
@@ -46,6 +46,8 @@ export default function GestorPage() {
   const s4 = agg(mine.filter(d => d.data >= addDays(seg, -21) && d.data <= addDays(seg, 6)));
   const total = agg(mine);
 
+  const concluidasDesde = ultimo ? mine.filter(d => d.conclusao && d.conclusao >= ultimo.data).sort((a, b) => (b.conclusao ?? "").localeCompare(a.conclusao ?? "")) : [];
+  const desfazer = (d: DemandaC) => run(() => supabase.from("demandas").update({ conclusao: null }).eq("id", d.id), "Conclusão desfeita");
   const concluir = (d: DemandaC) => run(() => supabase.from("demandas").update({ conclusao: hoje }).eq("id", d.id), "Demanda concluída");
 
   return (
@@ -80,6 +82,23 @@ export default function GestorPage() {
           {isAdmin && ultimo && <button className="btn sm" onClick={() => openOneOnOne({ oo: ultimo })}>Editar</button>}</h2>
         {ultimo ? <OOBody o={ultimo} por={quem(ultimo)} ligadas={mine.filter(d => d.oneonone_id === ultimo.id)} /> : <div className="notice">Nenhum 1:1 registrado ainda.{isAdmin && " Use “+ Registrar 1:1”."}</div>}
       </section>
+
+      {ultimo && <section className="block">
+        <h2>Desde o último 1:1 <span className="date">{br(ultimo.data)} até hoje</span></h2>
+        <p className="hint">{concluidasDesde.length} concluída{concluidasDesde.length === 1 ? "" : "s"} · {abertas.length} em aberto{abertas.filter(d => d._c.status === "Atrasada").length ? ` · ${abertas.filter(d => d._c.status === "Atrasada").length} atrasada(s)` : ""}. {podeConcluir && !isAdmin ? "Ao resolver uma demanda, clique em “✓ Concluir” na lista de abertas." : ""}</p>
+        {concluidasDesde.length === 0 ? <div className="notice">Nenhuma demanda concluída desde o último 1:1.</div> : (
+          <div className="tbl-wrap"><table>
+            <thead><tr><th>Concluída em</th><th>Cliente</th><th>Problema</th><th>Prioridade</th><th>Status</th>{podeConcluir && <th />}</tr></thead>
+            <tbody>{concluidasDesde.map(d => (
+              <tr key={d.id} className={d._c.row}>
+                <td className="date">{br(d.conclusao)}</td><td className="proj">{d.cliente_nome || "—"}</td><td className="txt">{d.problema}</td>
+                <td><Prio p={d.prioridade} /></td><td><span className={`pill ${d._c.cls}`}>{d._c.status}</span></td>
+                {podeConcluir && <td className="acts"><button className="btn sm" onClick={() => desfazer(d)}>Desfazer</button></td>}
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </section>}
 
       <div className="grid2">
         <section className="block">

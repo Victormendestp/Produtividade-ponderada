@@ -6,6 +6,10 @@ import type { Gestor, Prioridade } from "@/lib/types";
 function GestorRow({ g }: { g: Gestor }) {
   const { supabase, run, clientes, oneonones, demandas, profiles } = useData();
   const [nome, setNome] = useState(g.nome);
+  const [email, setEmail] = useState(g.email ?? "");
+  const mudou = nome.trim() !== g.nome || email.trim().toLowerCase() !== (g.email ?? "").toLowerCase();
+  const emailOk = !email.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const acesso = profiles.some(p => p.gestor_id === g.id && p.papel === "gestor");
 
   async function excluir() {
     const nc = clientes.filter(c => c.gestor_id === g.id).length;
@@ -28,8 +32,11 @@ function GestorRow({ g }: { g: Gestor }) {
   return (
     <div className="cfg-row">
       <input type="text" value={nome} onChange={e => setNome(e.target.value)} aria-label="Nome do gestor" />
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail de acesso do gestor" aria-label={`E-mail de ${g.nome}`} style={{ flex: "1 1 220px" }} />
+      {email.trim() && !mudou && <span className={`pill ${acesso ? "s-good" : "s-none"}`} title={acesso ? "Já entrou no sistema" : "Ainda não entrou"}>{acesso ? "Com acesso" : "Convite pendente"}</span>}
       <label><input type="checkbox" checked={g.ativo} onChange={e => run(() => supabase.from("gestores").update({ ativo: e.target.checked }).eq("id", g.id), e.target.checked ? "Gestor ativado" : "Gestor desativado")} /> Ativo</label>
-      <button className="btn sm" disabled={!nome.trim() || nome.trim() === g.nome} onClick={() => run(() => supabase.from("gestores").update({ nome: nome.trim() }).eq("id", g.id), "Nome salvo")}>Salvar</button>
+      <button className="btn sm" disabled={!nome.trim() || !mudou || !emailOk} title={emailOk ? undefined : "E-mail inválido"}
+        onClick={() => run(() => supabase.from("gestores").update({ nome: nome.trim(), email: email.trim().toLowerCase() || null }).eq("id", g.id), "Gestor salvo")}>Salvar</button>
       <button className="btn sm danger" onClick={excluir}>Excluir</button>
     </div>
   );
@@ -65,9 +72,9 @@ export default function Config() {
     <>
       <section className="block">
         <h2>Gestores</h2>
-        <p className="hint">Desmarcar “Ativo” tira o gestor do painel e guarda o histórico. “Excluir” apaga o gestor junto com a carteira, os 1:1 e as demandas dele.</p>
+        <p className="hint">Desmarcar “Ativo” tira o gestor do painel e guarda o histórico. “Excluir” apaga o gestor junto com a carteira, os 1:1 e as demandas dele. Com o e-mail cadastrado, o gestor entra pela tela de login recebendo um código nesse e-mail e vê só os próprios dados.</p>
         <div className="cfg-list">
-          {gestores.map(g => <GestorRow key={`${g.id}-${g.nome}`} g={g} />)}
+          {gestores.map(g => <GestorRow key={`${g.id}-${g.nome}-${g.email ?? ""}`} g={g} />)}
           <div className="cfg-row">
             <input type="text" placeholder="Nome do novo gestor" value={novo} onChange={e => setNovo(e.target.value)} onKeyDown={e => e.key === "Enter" && add()} />
             <button className="btn sm primary" onClick={add} disabled={!novo.trim()}>+ Adicionar</button>

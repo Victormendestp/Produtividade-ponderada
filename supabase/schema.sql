@@ -183,3 +183,14 @@ drop policy if exists dem_gestor_update on public.demandas;
 insert into public.gestores (nome)
 select n from unnest(array['Adolfo','Brendo','Carlos','Enzo','Gabriel','Icaro','Jonh','Juan','Júcio','Matheus','Paulo','Pedro','Rosa','Wesley']) as n
 where not exists (select 1 from public.gestores);
+
+-- ---------- Tempo real: avisa as telas abertas quando algo muda (respeita o RLS) ----------
+do $$
+declare t text;
+begin
+  foreach t in array array['gestores','clientes','oneonones','demandas','prioridades','profiles'] loop
+    if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;

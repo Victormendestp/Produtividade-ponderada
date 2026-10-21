@@ -63,6 +63,16 @@ export function DataProvider({ profile, children }: { profile: Profile; children
   }, [supabase, isAdmin]);
 
   useEffect(() => { reload(); }, [reload]);
+
+  // Tempo real: qualquer alteração feita por outro usuário recarrega os dados (agrupando rajadas)
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const ch = supabase.channel("pp-mudancas");
+    for (const table of ["gestores", "clientes", "oneonones", "demandas", "prioridades", "profiles"])
+      ch.on("postgres_changes", { event: "*", schema: "public", table }, () => { clearTimeout(t); t = setTimeout(reload, 400); });
+    ch.subscribe();
+    return () => { clearTimeout(t); supabase.removeChannel(ch); };
+  }, [supabase, reload]);
   useEffect(() => { if (!msg) return; const t = setTimeout(() => setMsg(""), 2600); return () => clearTimeout(t); }, [msg]);
 
   const demandas = useMemo(() => raw.map(d => ({ ...d, _c: calc(d, prios, hoje) })), [raw, prios, hoje]);

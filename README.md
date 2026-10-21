@@ -8,12 +8,12 @@ Feito com **Next.js** (telas) e **Supabase** (login, banco de dados e regras de 
 
 | Perfil | O que vê | O que pode fazer |
 |---|---|---|
-| Administrador | Tudo | Tudo: 1:1, demandas, clientes, gestores, prioridades, usuários |
-| Gestor | Só os próprios dados (carteira, 1:1, demandas) | Marcar a conclusão das próprias demandas |
+| Coordenador | Tudo | Tudo: faz os 1:1, demandas, clientes, gestores, prioridades, usuários. Pode haver vários. |
+| Gestor | Só os próprios dados (carteira, 1:1, demandas) | Só visualizar |
 | Liderança | Tudo | Só visualizar |
 | Aguardando liberação | Nada | Esperar o administrador definir o perfil |
 
-**A primeira pessoa que criar conta vira Administrador automaticamente.** Crie a sua antes de passar o link para os outros.
+**A primeira pessoa que criar conta vira Coordenador automaticamente.** Os outros coordenadores você promove na tela Usuários. Crie a sua antes de passar o link para os outros.
 
 ## 1. Criar o banco no Supabase
 
@@ -56,9 +56,9 @@ Confirmação de e-mail (**Authentication → Providers → Email → Confirm em
 
 ## 5. Primeiro acesso
 
-1. Abra o endereço, clique em **Criar conta** e cadastre-se. Você vira Administrador.
+1. Abra o endereço, clique em **Criar conta** e cadastre-se. Você vira Coordenador.
 2. Em **Configurações**, ajuste a lista de gestores e as prioridades (SLA e pontos), se precisar.
-3. Passe o link para gestores e liderança. Depois que eles criarem conta, abra **Usuários** e defina o perfil de cada um. Para gestores, escolha também a qual gestor a conta pertence.
+3. Passe o link para gestores e liderança. Depois que eles criarem conta, abra **Usuários** e defina o perfil de cada um (Coordenador, Gestor ou Liderança). Para gestores, escolha também a qual gestor a conta pertence.
 
 ## Como usar
 

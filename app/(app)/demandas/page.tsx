@@ -8,7 +8,7 @@ import { agg, br, pct, type Status } from "@/lib/calc";
 const STATUS: Status[] = ["Em andamento", "Atrasada", "Concluída no prazo", "Concluída fora do prazo", "Sem prioridade"];
 
 export default function Demandas() {
-  const { demandas, gestores, prios, isAdmin, profile, hoje, run, supabase } = useData();
+  const { demandas, gestores, prios, isAdmin, hoje, run, supabase } = useData();
   const { openDemanda } = useDialogs();
   const [g, setG] = useState("");
   const [st, setSt] = useState("");
@@ -26,7 +26,6 @@ export default function Demandas() {
       (!s || `${d.cliente_nome} ${d.problema} ${d.acao}`.toLowerCase().includes(s)));
   }, [demandas, g, st, pr, de, ate, q]);
   const a = agg(list);
-  const podeConcluir = (gid: string | null) => isAdmin || (profile.papel === "gestor" && profile.gestor_id === gid);
 
   function csv() {
     const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
@@ -63,7 +62,7 @@ export default function Demandas() {
               <td className="date">{d._c.prazo ? br(d._c.prazo) : "—"}</td><td className="date">{d.conclusao ? br(d.conclusao) : "—"}</td>
               <td><span className={`pill ${d._c.cls}`}>{d._c.status}</span></td><td className="n">{d._c.conq}/{d._c.poss}</td>
               <td className="acts">
-                {!d.conclusao && podeConcluir(d.gestor_id) && <button className="btn sm" onClick={() => run(() => supabase.from("demandas").update({ conclusao: hoje }).eq("id", d.id), "Demanda concluída")}>✓ Concluir</button>}
+                {!d.conclusao && isAdmin && <button className="btn sm" onClick={() => run(() => supabase.from("demandas").update({ conclusao: hoje }).eq("id", d.id), "Demanda concluída")}>✓ Concluir</button>}
                 <button className="btn sm" onClick={() => openDemanda({ d })}>{isAdmin ? "Editar" : "Abrir"}</button>
               </td>
             </tr>

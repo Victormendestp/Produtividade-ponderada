@@ -98,7 +98,7 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Gestor só pode alterar a data de conclusão das próprias demandas
+-- Proteção extra: quem não é coordenador (admin) não altera dados da demanda
 create or replace function public.guard_demanda_update() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
@@ -106,7 +106,7 @@ begin
     if (new.gestor_id, new.cliente_id, new.cliente_nome, new.oneonone_id, new.data, new.problema, new.acao, new.prioridade)
        is distinct from
        (old.gestor_id, old.cliente_id, old.cliente_nome, old.oneonone_id, old.data, old.problema, old.acao, old.prioridade) then
-      raise exception 'Somente o administrador altera os dados da demanda. O gestor pode apenas marcar a conclusão.';
+      raise exception 'Somente coordenadores alteram as demandas.';
     end if;
   end if;
   new.updated_at = now();
@@ -170,7 +170,7 @@ drop policy if exists oo_admin on public.oneonones;
 create policy oo_admin on public.oneonones for all to authenticated
   using (public.my_papel() = 'admin') with check (public.my_papel() = 'admin');
 
--- demandas: leitura igual; admin faz tudo; gestor atualiza as próprias (o gatilho limita à conclusão)
+-- demandas: leitura igual; só coordenadores (admin) alteram
 drop policy if exists dem_read on public.demandas;
 create policy dem_read on public.demandas for select to authenticated
   using (public.my_papel() in ('admin','lideranca') or gestor_id = public.my_gestor());
@@ -178,9 +178,6 @@ drop policy if exists dem_admin on public.demandas;
 create policy dem_admin on public.demandas for all to authenticated
   using (public.my_papel() = 'admin') with check (public.my_papel() = 'admin');
 drop policy if exists dem_gestor_update on public.demandas;
-create policy dem_gestor_update on public.demandas for update to authenticated
-  using (public.my_papel() = 'gestor' and gestor_id = public.my_gestor())
-  with check (public.my_papel() = 'gestor' and gestor_id = public.my_gestor());
 
 -- ---------- Gestores iniciais (os 14 da planilha; edite ou apague à vontade) ----------
 insert into public.gestores (nome)

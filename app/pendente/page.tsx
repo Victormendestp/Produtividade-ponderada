@@ -14,7 +14,7 @@ export default async function Pendente() {
     <div className="auth">
       <div className="auth-card">
         <h1>Acesso aguardando liberação</h1>
-        <p>Olá{p?.nome ? `, ${p.nome}` : ""}. Sua conta foi criada com o e-mail <b>{user.email}</b>. O administrador precisa definir seu perfil (gestor ou liderança) para você ver os dados.</p>
+        <p>Olá{p?.nome ? `, ${p.nome}` : ""}. Sua conta foi criada com o e-mail <b>{user.email}</b>. Um coordenador precisa definir seu perfil para você ver os dados.</p>
         <p>Depois de liberado, é só atualizar esta página.</p>
         <SairButton />
       </div>

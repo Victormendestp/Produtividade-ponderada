@@ -4,13 +4,33 @@ import { useData } from "@/components/DataProvider";
 import type { Gestor, Prioridade } from "@/lib/types";
 
 function GestorRow({ g }: { g: Gestor }) {
-  const { supabase, run } = useData();
+  const { supabase, run, clientes, oneonones, demandas, profiles } = useData();
   const [nome, setNome] = useState(g.nome);
+
+  async function excluir() {
+    const nc = clientes.filter(c => c.gestor_id === g.id).length;
+    const no = oneonones.filter(o => o.gestor_id === g.id).length;
+    const nd = demandas.filter(d => d.gestor_id === g.id).length;
+    const nu = profiles.filter(p => p.gestor_id === g.id).length;
+    const itens = [nc && `${nc} cliente(s)`, no && `${no} 1:1`, nd && `${nd} demanda(s)`].filter(Boolean).join(", ");
+    const msg = `Excluir ${g.nome} definitivamente?` +
+      (itens ? `\n\nTambém serão apagados: ${itens}. Isso não pode ser desfeito.\nPara guardar o histórico, use "Ativo" em vez de excluir.` : "") +
+      (nu ? `\n\n${nu} usuário(s) vinculado(s) a este gestor perdem o acesso aos dados.` : "");
+    if (!confirm(msg)) return;
+    await run(async () => {
+      const d = await supabase.from("demandas").delete().eq("gestor_id", g.id);
+      if (d.error) return d;
+      const c = await supabase.from("clientes").delete().eq("gestor_id", g.id);
+      if (c.error) return c;
+      return supabase.from("gestores").delete().eq("id", g.id); // os 1:1 saem junto (cascade)
+    }, "Gestor excluído");
+  }
   return (
     <div className="cfg-row">
       <input type="text" value={nome} onChange={e => setNome(e.target.value)} aria-label="Nome do gestor" />
       <label><input type="checkbox" checked={g.ativo} onChange={e => run(() => supabase.from("gestores").update({ ativo: e.target.checked }).eq("id", g.id), e.target.checked ? "Gestor ativado" : "Gestor desativado")} /> Ativo</label>
       <button className="btn sm" disabled={!nome.trim() || nome.trim() === g.nome} onClick={() => run(() => supabase.from("gestores").update({ nome: nome.trim() }).eq("id", g.id), "Nome salvo")}>Salvar</button>
+      <button className="btn sm danger" onClick={excluir}>Excluir</button>
     </div>
   );
 }
@@ -34,7 +54,7 @@ function PrioRow({ p }: { p: Prioridade }) {
 export default function Config() {
   const { isAdmin, gestores, prios, supabase, run } = useData();
   const [novo, setNovo] = useState("");
-  if (!isAdmin) return <div className="notice">Somente o administrador acessa as configurações.</div>;
+  if (!isAdmin) return <div className="notice">Somente coordenadores acessam as configurações.</div>;
 
   async function add() {
     if (!novo.trim()) return;
@@ -45,7 +65,7 @@ export default function Config() {
     <>
       <section className="block">
         <h2>Gestores</h2>
-        <p className="hint">Desativar tira o gestor do painel sem apagar o histórico.</p>
+        <p className="hint">Desmarcar “Ativo” tira o gestor do painel e guarda o histórico. “Excluir” apaga o gestor junto com a carteira, os 1:1 e as demandas dele.</p>
         <div className="cfg-list">
           {gestores.map(g => <GestorRow key={`${g.id}-${g.nome}`} g={g} />)}
           <div className="cfg-row">

@@ -44,7 +44,7 @@ export default function LoginPage() {
     <div className="auth">
       <form className="auth-card" onSubmit={submit}>
         <h1>Produtividade Ponderada</h1>
-        <p>{modo === "entrar" ? "Entre com seu e-mail e senha." : modo === "criar" ? "Crie seu acesso. O administrador libera seu perfil depois." : "Informe seu e-mail para redefinir a senha."}</p>
+        <p>{modo === "entrar" ? "Entre com seu e-mail e senha." : modo === "criar" ? "Crie seu acesso. Um coordenador libera seu perfil depois." : "Informe seu e-mail para redefinir a senha."}</p>
         {modo === "criar" && <div className="field"><label htmlFor="nome">Nome</label><input id="nome" value={nome} onChange={e => setNome(e.target.value)} autoComplete="name" /></div>}
         <div className="field"><label htmlFor="email">E-mail</label><input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" /></div>
         {modo !== "esqueci" && <div className="field"><label htmlFor="senha">Senha</label><input id="senha" type="password" required value={senha} onChange={e => setSenha(e.target.value)} autoComplete={modo === "criar" ? "new-password" : "current-password"} /></div>}

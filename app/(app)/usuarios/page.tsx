@@ -6,7 +6,7 @@ const PAPEIS: Papel[] = ["pendente", "gestor", "lideranca", "admin"];
 
 export default function Usuarios() {
   const { isAdmin, profiles, gestores, profile: eu, supabase, run } = useData();
-  if (!isAdmin) return <div className="notice">Somente o administrador gerencia usuários.</div>;
+  if (!isAdmin) return <div className="notice">Somente coordenadores gerenciam usuários.</div>;
 
   const set = (u: Profile, patch: Partial<Profile>) => run(() => supabase.from("profiles").update(patch).eq("id", u.id), "Usuário atualizado");
   const pend = profiles.filter(p => p.papel === "pendente").length;
@@ -14,7 +14,7 @@ export default function Usuarios() {
   return (
     <section className="block">
       <h2>Usuários {pend > 0 && <span className="pill s-warn">{pend} aguardando liberação</span>}</h2>
-      <p className="hint">Quem cria conta entra como “Aguardando liberação”. Defina o perfil: <b>Gestor</b> vê só os próprios dados e marca conclusões (escolha a qual gestor a conta pertence); <b>Liderança</b> vê tudo sem editar; <b>Administrador</b> faz tudo.</p>
+      <p className="hint">Quem cria conta entra como “Aguardando liberação”. Defina o perfil: <b>Coordenador</b> faz os 1:1 e administra tudo (pode haver vários); <b>Gestor</b> só visualiza os próprios dados (escolha a qual gestor a conta pertence); <b>Liderança</b> visualiza tudo sem editar.</p>
       <div className="tbl-wrap"><table>
         <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Gestor vinculado</th></tr></thead>
         <tbody>{profiles.map(u => (

@@ -19,7 +19,7 @@ export interface Cliente { id: string; nome: string; gestor_id: string | null; s
 export interface OneOnOne {
   id: string; gestor_id: string; data: string;
   resumo: string; atencao: string; combinados: string;
-  created_at: string; updated_at?: string;
+  created_by?: string | null; created_at: string; updated_at?: string;
 }
 
 export interface Demanda {
@@ -29,5 +29,5 @@ export interface Demanda {
 }
 
 export const PAPEL_LABEL: Record<Papel, string> = {
-  admin: "Administrador", gestor: "Gestor", lideranca: "Liderança", pendente: "Aguardando liberação",
+  admin: "Coordenador", gestor: "Gestor", lideranca: "Liderança", pendente: "Aguardando liberação",
 };

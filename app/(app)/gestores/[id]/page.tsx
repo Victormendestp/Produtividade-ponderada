@@ -11,9 +11,10 @@ function Texto({ t }: { t: string }) {
   return t.trim() ? <p>{t}</p> : <p className="empty">Não registrado</p>;
 }
 
-function OOBody({ o, ligadas }: { o: OneOnOne; ligadas: DemandaC[] }) {
+function OOBody({ o, ligadas, por }: { o: OneOnOne; ligadas: DemandaC[]; por?: string }) {
   return (
     <div className="oo">
+      {por && <div className="full sq" style={{ textTransform: "none", letterSpacing: 0 }}>Registrado por {por}</div>}
       <div><h3>Resumo</h3><Texto t={o.resumo} /></div>
       <div><h3>Pontos de atenção</h3><Texto t={o.atencao} /></div>
       <div><h3>Combinados</h3><Texto t={o.combinados} /></div>
@@ -28,12 +29,13 @@ function OOBody({ o, ligadas }: { o: OneOnOne; ligadas: DemandaC[] }) {
 
 export default function GestorPage() {
   const { id } = useParams<{ id: string }>();
-  const { gestores, clientes, demandas, oneonones, hoje, isAdmin, profile, run, supabase } = useData();
+  const { gestores, clientes, demandas, oneonones, profiles, hoje, isAdmin, run, supabase } = useData();
+  const quem = (o: OneOnOne) => { const u = profiles.find(p => p.id === o.created_by); return u ? u.nome || u.email || undefined : undefined; };
   const { openOneOnOne, openDemanda, openCliente } = useDialogs();
   const g = gestores.find(x => x.id === id);
   if (!g) return <div className="notice">Gestor não encontrado ou sem permissão de acesso.</div>;
 
-  const podeConcluir = isAdmin || (profile.papel === "gestor" && profile.gestor_id === g.id);
+  const podeConcluir = isAdmin;
   const seg = monday(hoje);
   const mine = demandas.filter(d => d.gestor_id === g.id);
   const carteira = clientes.filter(c => c.gestor_id === g.id);
@@ -76,7 +78,7 @@ export default function GestorPage() {
       <section className="block">
         <h2>Último 1:1 {ultimo && <span className="date">{br(ultimo.data)}</span>}
           {isAdmin && ultimo && <button className="btn sm" onClick={() => openOneOnOne({ oo: ultimo })}>Editar</button>}</h2>
-        {ultimo ? <OOBody o={ultimo} ligadas={mine.filter(d => d.oneonone_id === ultimo.id)} /> : <div className="notice">Nenhum 1:1 registrado ainda.{isAdmin && " Use “+ Registrar 1:1”."}</div>}
+        {ultimo ? <OOBody o={ultimo} por={quem(ultimo)} ligadas={mine.filter(d => d.oneonone_id === ultimo.id)} /> : <div className="notice">Nenhum 1:1 registrado ainda.{isAdmin && " Use “+ Registrar 1:1”."}</div>}
       </section>
 
       <div className="grid2">
@@ -130,7 +132,7 @@ export default function GestorPage() {
             <details key={o.id}>
               <summary><span className="date">{br(o.data)}</span><span className="x">{o.resumo || "Sem resumo"}</span>
                 {isAdmin && <button className="btn sm" onClick={e => { e.preventDefault(); openOneOnOne({ oo: o }); }}>Editar</button>}</summary>
-              <div className="body"><OOBody o={o} ligadas={mine.filter(d => d.oneonone_id === o.id)} /></div>
+              <div className="body"><OOBody o={o} por={quem(o)} ligadas={mine.filter(d => d.oneonone_id === o.id)} /></div>
             </details>
           ))}</div>
         )}

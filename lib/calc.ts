@@ -10,6 +10,16 @@ export const todayISO = () => { const n = new Date(); return `${n.getFullYear()}
 export const diffDays = (a: string, b: string) => Math.round((toD(a).getTime() - toD(b).getTime()) / 864e5);
 export const br = (iso?: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "";
 export const brShort = (iso?: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : "";
+/** Soma n dias úteis (segunda a sexta). Se a data cair no fim de semana, a contagem começa na segunda seguinte. */
+export const addBusinessDays = (iso: string, n: number) => {
+  const d = toD(iso);
+  const util = () => { const w = d.getUTCDay(); return w !== 0 && w !== 6; };
+  while (!util()) d.setUTCDate(d.getUTCDate() + 1);
+  for (let i = 0; i < n; i++) { d.setUTCDate(d.getUTCDate() + 1); while (!util()) d.setUTCDate(d.getUTCDate() + 1); }
+  return toISO(d);
+};
+/** Demandas a partir desta data têm o prazo em dias úteis; as anteriores seguem em dias corridos. */
+export const DIAS_UTEIS_DESDE = "2026-11-06";
 export const monday = (iso: string) => addDays(iso, -((toD(iso).getUTCDay() + 6) % 7));
 /** A semana pertence ao mês da sexta-feira dela (dia da apuração). */
 export const semanaDoMes = (seg: string) => { const fri = toD(addDays(seg, 4)); return `Semana ${Math.ceil(fri.getUTCDate() / 7)} – ${MESES[fri.getUTCMonth()]}/${fri.getUTCFullYear()}`; };
@@ -24,7 +34,7 @@ export function calc(d: Pick<Demanda, "data" | "prioridade" | "conclusao">, prio
   const seg = d.data ? monday(d.data) : "";
   const r: Calc = { seg, semana: seg ? semanaDoMes(seg) : "", prazo: "", status: "Sem prioridade", poss: 0, conq: 0, cls: "s-none", row: "" };
   if (!p || !d.data) return r;
-  r.prazo = addDays(d.data, Number(p.sla) || 0);
+  r.prazo = d.data >= DIAS_UTEIS_DESDE ? addBusinessDays(d.data, Number(p.sla) || 0) : addDays(d.data, Number(p.sla) || 0);
   r.poss = Number(p.pts) || 0;
   if (d.conclusao) {
     if (d.conclusao <= r.prazo) { r.status = "Concluída no prazo"; r.conq = r.poss; r.cls = "s-good"; r.row = "st-ok"; }

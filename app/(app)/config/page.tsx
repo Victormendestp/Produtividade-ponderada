@@ -51,7 +51,7 @@ function PrioRow({ p }: { p: Prioridade }) {
   return (
     <div className="cfg-row">
       <b style={{ minWidth: 70 }}>{p.nome}</b>
-      <label>SLA (dias) <input type="number" min={0} value={sla} onChange={e => setSla(e.target.value)} style={{ width: 70 }} className="btn sm" /></label>
+      <label>SLA (dias úteis) <input type="number" min={0} value={sla} onChange={e => setSla(e.target.value)} style={{ width: 70 }} className="btn sm" /></label>
       <label>Pontos <input type="number" min={0} value={pts} onChange={e => setPts(e.target.value)} style={{ width: 70 }} className="btn sm" /></label>
       <button className="btn sm" disabled={!changed || !valid} onClick={() => run(() => supabase.from("prioridades").update({ sla: Number(sla), pts: Number(pts) }).eq("nome", p.nome), "Prioridade salva")}>Salvar</button>
     </div>
@@ -89,7 +89,7 @@ export default function Config() {
       <section className="block">
         <h2>Regras de cálculo</h2>
         <div className="rules">
-          <p><b>Prazo</b> = data da demanda + SLA da prioridade (em dias corridos).</p>
+          <p><b>Prazo</b> = data da demanda + SLA da prioridade em <b>dias úteis</b> (segunda a sexta). Demanda registrada no sábado ou domingo começa a contar na segunda. Demandas anteriores a 06/11/2026 mantêm a contagem antiga, em dias corridos.</p>
           <p><b>Pontos possíveis</b> = pontos da prioridade. <b>Pontos conquistados</b> = os mesmos pontos, só se a conclusão for até o prazo; fora do prazo vale zero.</p>
           <p><b>Produtividade</b> = conquistados ÷ possíveis. Verde a partir de 80%, amarelo de 50% a 79%, vermelho abaixo de 50%.</p>
           <p><b>Semana</b> de segunda a domingo, contada no mês da sexta-feira. Demandas sem prioridade não entram na conta.</p>

@@ -205,7 +205,7 @@ function DemandaDialog({ d, gestorId, onClose }: { d?: Demanda; gestorId?: strin
       <div className="field"><label>Prioridade</label>
         <select value={prioridade} onChange={e => setPrioridade(e.target.value)} disabled={ro}>
           <option value="">Sem prioridade</option>
-          {prios.map(p => <option key={p.nome} value={p.nome}>{p.nome} · SLA {p.sla}d · {p.pts} pt</option>)}
+          {prios.map(p => <option key={p.nome} value={p.nome}>{p.nome} · SLA {p.sla} dia{p.sla === 1 ? "" : "s"} út{p.sla === 1 ? "il" : "eis"} · {p.pts} pt</option>)}
         </select></div>
       <div className="field full"><label>Problema</label><textarea value={problema} onChange={e => setProblema(e.target.value)} disabled={ro} /></div>
       <div className="field full"><label>Ação</label><textarea value={acao} onChange={e => setAcao(e.target.value)} disabled={ro} /></div>

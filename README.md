@@ -77,7 +77,7 @@ Os códigos são enviados pelo Gmail configurado no Supabase (Authentication →
 
 ## Regras de cálculo
 
-- **Prazo** = data da demanda + SLA da prioridade (dias corridos).
+- **Prazo** = data da demanda + SLA da prioridade em dias úteis (segunda a sexta). Demanda registrada no fim de semana começa a contar na segunda. Demandas anteriores a 06/11/2026 seguem em dias corridos.
 - **Pontos conquistados** = pontos da prioridade, só se concluída até o prazo.
 - **Produtividade** = conquistados ÷ possíveis. Verde ≥ 80%, amarelo 50–79%, vermelho < 50%.
 - **Semana**: segunda a domingo, contada no mês da sexta-feira.
